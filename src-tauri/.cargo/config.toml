@@ -1,0 +1,2 @@
+[registries]
+eliamo = { index = "sparse+https://crates.eliamo.co.jp/api/v1/crates/", token = "zbdn5z7z9mN8zkP5std8VFTyDVH8b7aX" }

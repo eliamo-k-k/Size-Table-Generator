@@ -1,5 +1,7 @@
 mod error;
 
+use std::collections::HashMap;
+
 pub use error::Error;
 use gcp_auth::{AuthenticationManager, Token};
 use reqwest::Client;
@@ -13,9 +15,12 @@ pub struct TranslateClient {
   gcp_token: Token,
   http_client: Client,
   auth_manager: AuthenticationManager,
+  glossary: HashMap<String, String>,
 }
 
 const SCOPES: &[&str] = &["https://www.googleapis.com/auth/cloud-platform"];
+const GLOSSARY_URL: &str =
+  "https://size-table-generator.s3.ap-northeast-1.amazonaws.com/phdb-glossary.csv";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,11 +49,14 @@ struct ErrorMessage {
 impl TranslateClient {
   pub async fn new() -> Result<Self> {
     let auth_manager = AuthenticationManager::new().await?;
+    let http_client = reqwest::Client::new();
+    let glossary = Self::read_glossary_file(&http_client).await?;
     let token = auth_manager.get_token(SCOPES).await?;
     Ok(Self {
       gcp_token: token,
-      http_client: reqwest::Client::new(),
+      http_client,
       auth_manager,
+      glossary,
     })
   }
 
@@ -56,6 +64,18 @@ impl TranslateClient {
     let token = self.auth_manager.get_token(SCOPES).await?;
     self.gcp_token = token;
     Ok(())
+  }
+
+  pub fn translate_local(&mut self, inputs: &[String]) -> Result<Vec<String>> {
+    let mut translated = Vec::new();
+    for input in inputs {
+      if self.glossary.contains_key(input) {
+        translated.push(self.glossary[input].clone());
+      } else {
+        translated.push(input.clone());
+      }
+    }
+    Ok(translated)
   }
 
   pub async fn translate(&mut self, inputs: &[String]) -> Result<Vec<String>> {
@@ -93,6 +113,23 @@ impl TranslateClient {
         .map(|t| t.translated_text)
         .collect(),
     )
+  }
+
+  async fn read_glossary_file(http_client: &Client) -> Result<HashMap<String, String>> {
+    let glossary_file = Self::fetch_glossary_file(http_client).await?;
+    let mut reader = csv::Reader::from_reader(glossary_file.as_bytes());
+    let mut glossary = HashMap::new();
+    for result in reader.records() {
+      let record = result.unwrap();
+      glossary.insert(record[0].to_string(), record[1].to_string());
+    }
+    Ok(glossary)
+  }
+
+  async fn fetch_glossary_file(http_client: &Client) -> Result<String> {
+    let resp = http_client.get(GLOSSARY_URL).send().await?;
+    let text = resp.text().await?;
+    Ok(text)
   }
 }
 

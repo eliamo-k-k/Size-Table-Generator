@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import WrapperBase from "../../styles/styleAtoms/ColumnFlexWrapper";
 import { Color } from "../../styles/Color";
@@ -8,18 +8,21 @@ import { SelectSaveDir } from "./SelectSaveDir";
 import { SavePics } from "./SavePics";
 import { useAtom } from "jotai";
 import { appVersionAtom } from "../../lib/store";
+import { ExcelPreview } from "./ExcelPreview";
 
 export const ControlPanel = () => {
   const [appVersion] = useAtom(appVersionAtom);
+  const [excelData, setExcelData] = useState<any[][]>([]);
   return (
     <Layout>
       <Wrapper>
         <LogoWrapper src={Logo} alt="logo" />
       </Wrapper>
       <Wrapper>
-        <OpenExcelFile />
+        <OpenExcelFile onExcelLoaded={setExcelData} />
         <SelectSaveDir />
         <SavePics />
+        <ExcelPreview data={excelData} />
       </Wrapper>
       <AppVersionWrapper>v{appVersion}</AppVersionWrapper>
     </Layout>

@@ -10,6 +10,7 @@ interface Props {
   name?: string;
   animated?: boolean;
   fontSize?: string;
+  disabled?: boolean;
 }
 
 export const Button = ({
@@ -20,6 +21,7 @@ export const Button = ({
   name,
   animated = true,
   fontSize,
+  disabled,
 }: Props) => {
   const [clicked, setClicked] = useState(false);
   const handleOnClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -36,6 +38,7 @@ export const Button = ({
       onClick={handleOnClick}
       selected={selected}
       fontSize={fontSize}
+      disabled={disabled}
     >
       {children}
     </Wrapper>
