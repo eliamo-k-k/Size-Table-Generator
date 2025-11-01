@@ -7,7 +7,7 @@ import ColumnFlex from "../../styles/styleAtoms/ColumnFlexWrapper";
 import { saveDirAtom, statusInfoAtom, tableIdsAtom } from "../../lib/store";
 import { useAtom } from "jotai";
 import { checkDirThenCreate, saveElementToPath } from "../../lib/saveFile";
-import { open as shellOpen } from "@tauri-apps/api/shell";
+import { open as shellOpen } from "@tauri-apps/plugin-shell";
 import { triggerTempStatusPanel } from "../../lib/utility";
 
 export const SavePics = () => {

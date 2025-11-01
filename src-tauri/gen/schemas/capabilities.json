@@ -1,0 +1,1 @@
+{"main-capability":{"identifier":"main-capability","description":"","local":true,"windows":["main"],"permissions":["core:default","dialog:allow-open","fs:allow-read-file","fs:allow-write-file","fs:allow-read-dir","fs:allow-mkdir","fs:allow-exists","fs:scope-home-recursive","shell:allow-open","core:path:default","core:app:allow-version"]}}

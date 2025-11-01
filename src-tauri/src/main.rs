@@ -17,6 +17,9 @@ fn main() {
   let translate_client = tauri::async_runtime::block_on(TranslateClient::new()).unwrap();
   let client = Arc::new(Mutex::new(translate_client));
   tauri::Builder::default()
+    .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_fs::init())
+    .plugin(tauri_plugin_shell::init())
     .manage(client)
     .invoke_handler(tauri::generate_handler![process_excel_file])
     .run(tauri::generate_context!())

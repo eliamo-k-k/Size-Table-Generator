@@ -2,10 +2,11 @@ use std::sync::Arc;
 
 use calamine::{open_workbook, DataType, Reader, Xlsx};
 use itertools::Itertools;
-use melrose_types::{ItemCode, SizeCode, Specification};
+use melrose_types::{ItemCode, SizeCode};
 use phdb_translate::TranslateClient;
 use serde::Serialize;
 use tauri::async_runtime::Mutex;
+use tauri::Emitter;
 
 use crate::{Error, Result};
 pub trait MySpecification<Input>
@@ -220,12 +221,12 @@ pub async fn process_excel_file(
       let item_code = row[item_code_idx]
         .to_string()
         .replace(" ", "_")
-        .parse_by_specification()
-        .map_err(Error::MelroseType)?;
+        .parse::<ItemCode>()
+        .map_err(|e| Error::MelroseType(melrose_types::error::Error::from(e)))?;
       let size_code = row[size_code_idx]
         .to_string()
-        .parse_by_specification()
-        .map_err(Error::MelroseType)?;
+        .parse::<SizeCode>()
+        .map_err(|e| Error::MelroseType(melrose_types::error::Error::from(e)))?;
       let size_text = SizeDetails::parse(row[size_text_idx].to_string())?;
       let size_text_zh = size_text.translate_to_zh(&mut local_client).await?;
       item_infos.push(ItemInfo {

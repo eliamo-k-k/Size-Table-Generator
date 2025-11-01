@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import RowFlex from "../../styles/styleAtoms/RowFlexWrapper";
 import ColumnFlex from "../../styles/styleAtoms/ColumnFlexWrapper";
-import { open } from "@tauri-apps/api/dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useAtom } from "jotai";
 import {
   itemMetasAtom,

@@ -4,7 +4,7 @@ import { Color } from "../../styles/Color";
 import ColumnFlex from "../../styles/styleAtoms/ColumnFlexWrapper";
 import RowFlex from "../../styles/styleAtoms/RowFlexWrapper";
 import { Button } from "./Button";
-import { open } from "@tauri-apps/api/dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import { saveDirAtom } from "../../lib/store";
 import { useAtom } from "jotai";
 import { trimHomePath } from "../../lib/utility";

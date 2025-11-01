@@ -2,9 +2,9 @@ import { homeDir } from "@tauri-apps/api/path";
 import { SetStateAction } from "jotai";
 import { StatusInfo, StatusInfoContent, StatusInfoType } from "../types";
 
-export async function trimHomePath(path: string) {
+export async function trimHomePath(pathStr: string) {
   const home = await homeDir();
-  return path.replace(home, "~/");
+  return pathStr.replace(home, "~/");
 }
 
 export function triggerTempStatusPanel(

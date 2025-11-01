@@ -6,23 +6,26 @@ authors = ["you"]
 license = ""
 repository = ""
 default-run = "app"
-edition = "2018"
+edition = "2021"
 build = "src/build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5", features = [] }
+tauri-build = { version = "2.2.5", features = [] }
 
 [dependencies]
 serde_json = "1.0.82"
 melrose-types = {version = "0.7.6", registry = "eliamo", features = ["serde"] }
 serde = { version = "1.0.137", features = ["derive"] }
-tauri = { version = "1.5", features = ["api-all"] }
+tauri = { version = "2.2.5", features = [] }
+tauri-plugin-dialog = "2.0"
+tauri-plugin-fs = "2.0"
+tauri-plugin-shell = "2.0"
 calamine = "0.22"
 itertools = "0.10.3"
 phdb-translate = {path = "./phdb-translate"}
+dirs = "5.0"
 
 [features]
-default = [ "custom-protocol" ]
-custom-protocol = [ "tauri/custom-protocol" ]
+default = []

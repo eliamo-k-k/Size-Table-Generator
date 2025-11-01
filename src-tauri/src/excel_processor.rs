@@ -46,12 +46,12 @@ pub fn process_excel_rows(
       let item_code = row[item_code_idx]
         .to_string()
         .replace(" ", "_")
-        .parse_by_specification()
-        .map_err(Error::MelroseType)?;
+        .parse::<ItemCode>()
+        .map_err(|e| Error::MelroseType(melrose_types::error::Error::from(e)))?;
       let size_code = row[size_code_idx]
         .to_string()
-        .parse_by_specification()
-        .map_err(Error::MelroseType)?;
+        .parse::<SizeCode>()
+        .map_err(|e| Error::MelroseType(melrose_types::error::Error::from(e)))?;
       let size_text = SizeDetails::parse(row[size_text_idx].to_string())?;
       item_infos.push(ItemInfo {
         item_code,

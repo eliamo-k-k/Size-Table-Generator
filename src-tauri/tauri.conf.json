@@ -1,75 +1,63 @@
 {
-  "package": {
-    "productName": "STG",
-    "version": "0.1.10"
-  },
+  "productName": "STG",
+  "version": "0.1.10",
+  "identifier": "Size-Table-Generator",
   "build": {
-    "distDir": "../build",
-    "devPath": "http://localhost:3000",
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:3000",
     "beforeDevCommand": "yarn start",
     "beforeBuildCommand": "yarn build"
   },
-  "tauri": {
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "Size-Table-Generator",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "resources": [],
-      "externalBin": [],
-      "copyright": "",
-      "category": "DeveloperTool",
-      "shortDescription": "",
-      "longDescription": "",
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": [],
+    "externalBin": [],
+    "copyright": "",
+    "category": "DeveloperTool",
+    "shortDescription": "",
+    "longDescription": "",
+    "linux": {
       "deb": {
         "depends": []
-      },
-      "macOS": {
-        "frameworks": [],
-        "minimumSystemVersion": "",
-        "exceptionDomain": "",
-        "signingIdentity": null,
-        "entitlements": null
-      },
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
       }
     },
-    "updater": {
-      "active": false
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "entitlements": null
     },
-    "allowlist": {
-      "all": true,
-      "fs": {
-        "readFile": true,
-        "writeFile": true,
-        "readDir": true,
-        "createDir": true,
-        "exists": true,
-        "scope": ["$HOME/**", "$HOME/*", "$HOME"]
-      }
-    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
+  },
+  "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Size Table Generator",
         "width": 1400,
         "height": 900,
         "resizable": true,
         "fullscreen": false,
-        "titleBarStyle": "Transparent",
-        "hiddenTitle": true
+        "titleBarStyle": "Transparent"
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "freezePrototype": false
     }
-  }
+  },
+  "plugins": {}
 }
