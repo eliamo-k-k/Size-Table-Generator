@@ -9,12 +9,18 @@ use serde::Deserialize;
 
 use crate::error::Result;
 
+// ビルド時に生成されたglossaryモジュールをインクルード
+#[path = ""]
+mod embedded_glossary {
+  include!(concat!(env!("OUT_DIR"), "/glossary.rs"));
+}
+
 const TRANSLATE_URL: &str =
   "https://translation.googleapis.com/v3/projects/phdb-translate/locations/us-central1:translateText";
 pub struct TranslateClient {
-  gcp_token: Token,
+  gcp_token: Option<Token>,
   http_client: Client,
-  auth_manager: AuthenticationManager,
+  auth_manager: Option<AuthenticationManager>,
   glossary: HashMap<String, String>,
 }
 
@@ -48,21 +54,38 @@ struct ErrorMessage {
 
 impl TranslateClient {
   pub async fn new() -> Result<Self> {
-    let auth_manager = AuthenticationManager::new().await?;
     let http_client = reqwest::Client::new();
     let glossary = Self::read_glossary_file(&http_client).await?;
-    let token = auth_manager.get_token(SCOPES).await?;
     Ok(Self {
-      gcp_token: token,
+      gcp_token: None,
       http_client,
-      auth_manager,
+      auth_manager: None,
       glossary,
     })
   }
 
+  async fn ensure_token(&mut self) -> Result<&Token> {
+    if self.gcp_token.is_none() || self.auth_manager.is_none() {
+      // 初回取得またはトークンが無効な場合
+      let auth_manager = AuthenticationManager::new().await?;
+      let token = auth_manager.get_token(SCOPES).await?;
+      self.gcp_token = Some(token);
+      self.auth_manager = Some(auth_manager);
+    }
+    Ok(self.gcp_token.as_ref().unwrap())
+  }
+
   pub async fn refresh_token(&mut self) -> Result<()> {
-    let token = self.auth_manager.get_token(SCOPES).await?;
-    self.gcp_token = token;
+    let auth_manager = match &mut self.auth_manager {
+      Some(am) => am,
+      None => {
+        let am = AuthenticationManager::new().await?;
+        self.auth_manager = Some(am);
+        self.auth_manager.as_mut().unwrap()
+      }
+    };
+    let token = auth_manager.get_token(SCOPES).await?;
+    self.gcp_token = Some(token);
     Ok(())
   }
 
@@ -77,8 +100,18 @@ impl TranslateClient {
     }
     Ok(translated)
   }
-
+  /// translate the input text to zh
+  ///
+  /// this functions rely on google cloud translate api
+  ///
+  /// [WARN] so it will not work in china mainland
   pub async fn translate(&mut self, inputs: &[String]) -> Result<Vec<String>> {
+    // トークンがまだ取得されていない場合、ここで取得
+    let token_str = {
+      let token = self.ensure_token().await?;
+      token.as_str().to_string()
+    };
+
     let translate_request_data = serde_json::json!(
         {
           "sourceLanguageCode": "ja",
@@ -89,14 +122,12 @@ impl TranslateClient {
           }
         }
     );
-
-    let token_str = self.gcp_token.as_str();
     let resp = self
       .http_client
       .post(TRANSLATE_URL)
       .header("Content-Type", "application/json; charset=utf-8")
       .json(&translate_request_data)
-      .bearer_auth(token_str.trim())
+      .bearer_auth(token_str)
       .send()
       .await?;
     if resp.status().as_u16() >= 300 {
@@ -116,7 +147,19 @@ impl TranslateClient {
   }
 
   async fn read_glossary_file(http_client: &Client) -> Result<HashMap<String, String>> {
-    let glossary_file = Self::fetch_glossary_file(http_client).await?;
+    // まず、ビルド時に埋め込まれたglossaryファイルを試す
+    let glossary_file = match Self::get_embedded_glossary() {
+      Some(content) if !content.is_empty() => {
+        println!("Using embedded glossary file from build time");
+        content.to_string()
+      }
+      _ => {
+        // 埋め込みファイルが存在しない場合、実行時にダウンロード
+        println!("Embedded glossary not found or empty, downloading from URL...");
+        Self::fetch_glossary_file(http_client).await?
+      }
+    };
+
     let mut reader = csv::Reader::from_reader(glossary_file.as_bytes());
     let mut glossary = HashMap::new();
     for result in reader.records() {
@@ -124,6 +167,16 @@ impl TranslateClient {
       glossary.insert(record[0].to_string(), record[1].to_string());
     }
     Ok(glossary)
+  }
+
+  fn get_embedded_glossary() -> Option<&'static str> {
+    // ビルド時に生成されたglossaryコードから取得
+    let content = embedded_glossary::get_glossary_content();
+    if content.is_empty() {
+      None
+    } else {
+      Some(content)
+    }
   }
 
   async fn fetch_glossary_file(http_client: &Client) -> Result<String> {
