@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use calamine::{open_workbook, DataType, Reader, Xlsx};
 use itertools::Itertools;
@@ -9,16 +9,6 @@ use tauri::async_runtime::Mutex;
 use tauri::Emitter;
 
 use crate::{Error, Result};
-pub trait MySpecification<Input>
-where
-  Self: Sized,
-{
-  fn parse(input: Input) -> Result<Self>;
-
-  fn is_match(input: Input) -> bool {
-    Self::parse(input).is_ok()
-  }
-}
 
 #[derive(Serialize)]
 pub struct ProcessResponse {
@@ -55,13 +45,15 @@ struct SizeDetail {
   value: String,
 }
 
-impl MySpecification<String> for SizeDetail {
-  fn parse(input: String) -> Result<Self> {
-    if input.is_empty() {
+impl FromStr for SizeDetail {
+  type Err = Error;
+
+  fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    if s.is_empty() {
       return Err(Error::EmptySizeText);
     }
 
-    let escaped = escape_colon_whitespace(input);
+    let escaped = escape_colon_whitespace(s);
     println!("escaped: {}", escaped);
     // should contain ':' and only one ':'
     if !escaped.contains(':') || escaped.matches(':').count() != 1 {
@@ -98,21 +90,23 @@ impl MySpecification<String> for SizeDetail {
 #[derive(Clone)]
 struct SizeDetails(Vec<SizeDetail>);
 
-impl MySpecification<String> for SizeDetails {
-  fn parse(input: String) -> Result<Self> {
-    if input.is_empty() {
+impl FromStr for SizeDetails {
+  type Err = Error;
+
+  fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    if s.is_empty() {
       return Err(Error::EmptySizeText);
     }
 
-    let splitted = input.split_whitespace().collect_vec();
+    let splitted = s.split_whitespace().collect_vec();
     if splitted.is_empty() {
       return Err(Error::EmptySizeText);
     }
 
     let size_details = splitted
       .iter()
-      .map(|s| SizeDetail::parse(s.to_string()))
-      .collect::<Result<Vec<_>>>()?;
+      .map(|s| SizeDetail::from_str(s))
+      .collect::<std::result::Result<Vec<_>, Error>>()?;
 
     Ok(Self(size_details))
   }
@@ -227,7 +221,7 @@ pub async fn process_excel_file(
         .to_string()
         .parse::<SizeCode>()
         .map_err(|e| Error::MelroseType(melrose_types::error::Error::from(e)))?;
-      let size_text = SizeDetails::parse(row[size_text_idx].to_string())?;
+      let size_text: SizeDetails = row[size_text_idx].to_string().parse()?;
       let size_text_zh = size_text.translate_to_zh(&mut local_client).await?;
       item_infos.push(ItemInfo {
         item_code,

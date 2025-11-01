@@ -57,6 +57,15 @@ jobs:
                   args: ${{ matrix.args }}
                   tagName: ${{ github.ref_name }}
                   releaseName: "Size Table Generator v__VERSION__"
-                  releaseBody: "See the assets to download and install this version."
-                  releaseDraft: true
+                  releaseBody: |
+                      See the assets to download and install this version.
+
+                      ## Downloads
+                      - **Windows**: Download the `.msi` installer or `.exe` file
+                      - **macOS**: Download the `.dmg` file or `.app` bundle
+
+                      ## Installation
+                      - **Windows**: Run the `.msi` installer
+                      - **macOS**: Open the `.dmg` file and drag the app to Applications
+                  releaseDraft: false
                   prerelease: false
