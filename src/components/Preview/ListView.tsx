@@ -19,7 +19,8 @@ export const ListView = () => {
 
 const Wrapper = styled(Base)`
   justify-content: flex-start;
-  height: 100vh;
+  /* 親のプレビューエリアの高さに合わせる */
+  height: 100%;
   overflow-y: auto;
   scrollbar-width: none;
   &::-webkit-scrollbar {
