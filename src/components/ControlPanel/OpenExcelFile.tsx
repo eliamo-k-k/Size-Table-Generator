@@ -27,7 +27,7 @@ interface OpenExcelFileProps {
 export const OpenExcelFile: React.FC<OpenExcelFileProps> = ({
   onExcelLoaded,
 }) => {
-  const [itemMetas, setItemMetas] = useAtom(itemMetasAtom);
+  const [, setItemMetas] = useAtom(itemMetasAtom);
   const [, setShowLoadingLogo] = useAtom(showLoadingLogoAtom);
   const [, setStatusInfo] = useAtom(statusInfoAtom);
   const [excelPath, setExcelPath] = useState<string>("");
