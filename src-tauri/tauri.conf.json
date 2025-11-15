@@ -1,6 +1,6 @@
 {
   "productName": "STG",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "identifier": "Size-Table-Generator",
   "build": {
     "frontendDist": "../build",
