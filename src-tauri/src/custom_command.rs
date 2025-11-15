@@ -4,6 +4,7 @@ use calamine::{open_workbook, DataType, Reader, Xlsx};
 use itertools::Itertools;
 use melrose_types::{ItemCode, SizeCode};
 use phdb_translate::TranslateClient;
+use regex::{Captures, Regex};
 use serde::Serialize;
 use tauri::async_runtime::Mutex;
 use tauri::Emitter;
@@ -85,8 +86,11 @@ impl FromStr for SizeDetail {
   }
 }
 
-/// A Contain the multi name value pairs of size detail separated by whitespace
-/// For instance: 肩宽:42.5cm 袖丈:62cm 胸囲:104cm 裾囲:104cm
+static MIHABA_REPLACE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r".*身幅.*").unwrap());
+use once_cell::sync::Lazy;
+static DIGIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\d+(?:\.\d+)?").unwrap());
+/// Contains multiple name-value pairs of size details, separated by whitespace.
+/// For example: 肩宽:42.5cm 袖丈:62cm 胸囲:104cm 裾囲:104cm
 #[derive(Clone)]
 struct SizeDetails(Vec<SizeDetail>);
 
@@ -129,6 +133,54 @@ impl SizeDetails {
       sd.name = translated[i].to_owned();
     }
     Ok(cloned_self)
+  }
+
+  fn replace_to_chest_size(&mut self) {
+    self.0 = self
+      .0
+      .iter()
+      .cloned()
+      .map(|sd| {
+        if MIHABA_REPLACE_REGEX.is_match(&sd.name.as_str()) {
+          println!("replace to chest size: {}", sd.name);
+          // replace .*身幅.* with .*胸囲.*
+          let mut sd = sd.clone();
+          sd.name = sd.name.replace("身幅", "胸囲");
+          sd.value = DIGIT_REGEX
+            .replace_all(&sd.value, |caps: &Captures| {
+              println!("replace to chest size: {}", caps.get(0).unwrap().as_str());
+              let value = caps.get(0).unwrap().as_str();
+              let value: f64 = value.parse().unwrap();
+              let result = value * 2.0;
+              format_result(result)
+            })
+            .to_string();
+          sd
+        } else {
+          println!("not replace to chest size: {}", sd.name);
+          sd
+        }
+      })
+      .collect();
+  }
+}
+
+/// format the result to a string
+/// if the result is an integer, return the integer
+/// if the result is a decimal, return the decimal with 1 decimal place
+/// for example:
+/// ```rust
+/// use custom_command::format_result;
+/// let result = format_result(1.0); // "1"
+/// let result = format_result(1.1); // "1.1"
+/// let result = format_result(1.01); // "1.0"
+/// let result = format_result(1.001); // "1.0"
+/// ```
+fn format_result(result: f64) -> String {
+  if (result.fract() * 10.0).round() == 0.0 {
+    format!("{}", result.trunc() as i64)
+  } else {
+    format!("{:.1}", result)
   }
 }
 
@@ -221,7 +273,8 @@ pub async fn process_excel_file(
         .to_string()
         .parse::<SizeCode>()
         .map_err(|e| Error::MelroseType(melrose_types::error::Error::from(e)))?;
-      let size_text: SizeDetails = row[size_text_idx].to_string().parse()?;
+      let mut size_text: SizeDetails = row[size_text_idx].to_string().parse()?;
+      size_text.replace_to_chest_size();
       let size_text_zh = size_text.translate_to_zh(&mut local_client).await?;
       item_infos.push(ItemInfo {
         item_code,
